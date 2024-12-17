@@ -8,7 +8,7 @@ function generateConversationId(userId1, userId2) {
 }
 
 router.post("/", async(req, res)=>{
-    const {sender, receiver, content} = req.body();
+    const {sender, receiver, content} = req.body;
     try{
         const conversationId = generateConversationId(sender, receiver);
         const newMessage = new Message({
@@ -26,7 +26,7 @@ router.post("/", async(req, res)=>{
 });
 
 router.get('/:conversationId', async(req, res)=>{
-    const {conversation} = req.params();
+    const {conversation} = req.params;
     try{
         const message = await Message.find({conversation})
             .sort({timestamp: 1})
