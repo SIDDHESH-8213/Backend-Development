@@ -5,6 +5,7 @@ const dotenv = require("dotenv");
 const connectDB = require("./config/db");
 const initSocket = require("./socket/socket");
 const authRoutes = require("./routes/auth");
+const messageRoutes = require("./routes/messages")
 
 dotenv.config();
 connectDB();
@@ -15,6 +16,7 @@ const server = http.createServer(app);
 app.use(cors());
 app.use(express.json());
 app.use("/api/auth", authRoutes);
+app.use("/api/mess", messageRoutes);
 
 initSocket(server);
 

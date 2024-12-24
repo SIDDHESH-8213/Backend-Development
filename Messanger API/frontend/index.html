@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Socket.IO Test</title>
+  <script src="https://cdn.socket.io/4.5.1/socket.io.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    #messages {
+      border: 1px solid #ccc;
+      height: 300px;
+      overflow-y: scroll;
+      margin-bottom: 20px;
+      padding: 10px;
+    }
+    #online-users {
+      margin-bottom: 20px;
+    }
+    input, select, button {
+      padding: 10px;
+      margin: 5px 0;
+    }
+    .typing {
+      color: gray;
+      font-style: italic;
+    }
+  </style>
+</head>
+<body>
+  <h2>Socket.IO Messaging Test</h2>
+
+  <div id="online-users">
+    <strong>Online Users:</strong> 
+    <select id="receiver">
+      <option value="">Select a user to message</option>
+    </select>
+  </div>
+
+  <div id="messages">
+    <strong>Messages:</strong>
+    <div id="chat"></div>
+  </div>
+
+  <input type="text" id="message" placeholder="Type a message..." />
+  <button id="send">Send</button>
+  <p id="typing" class="typing"></p>
+
+  <script>
+    const socket = io("http://localhost:5000"); 
+
+    const messageInput = document.getElementById("message");
+    const sendButton = document.getElementById("send");
+    const chatBox = document.getElementById("chat");
+    const typingIndicator = document.getElementById("typing");
+    const receiverSelect = document.getElementById("receiver");
+
+    let username = prompt("Enter your username:") || `User${Math.floor(Math.random() * 1000)}`;
+    socket.emit("userOnline", username);
+
+    
+    socket.on("updateOnlineUsers", (users) => {
+      updateUserList(users);
+    });
+
+    
+    function updateUserList(users) {
+      receiverSelect.innerHTML = '<option value="">Select a user to message</option>';
+      users.forEach(user => {
+        if (user !== username) {
+          const option = document.createElement("option");
+          option.value = user;
+          option.textContent = user;
+          receiverSelect.appendChild(option);
+        }
+      });
+    }
+
+    
+    sendButton.addEventListener("click", () => {
+      const message = messageInput.value.trim();
+      const receiver = receiverSelect.value;
+
+      if (!receiver) {
+        alert("Please select a user to send the message.");
+        return;
+      }
+
+      if (message) {
+        socket.emit("sendMessage", { sender: username, receiver, content: message });
+        addMessageToChat(`You to ${receiver}: ${message}`);
+        messageInput.value = "";
+      }
+    });
+
+    messageInput.addEventListener("input", () => {
+      const receiver = receiverSelect.value;
+      if (receiver) {
+        socket.emit("typing", { sender: username, receiver });
+      }
+    });
+
+    messageInput.addEventListener("blur", () => {
+      const receiver = receiverSelect.value;
+      if (receiver) {
+        socket.emit("stopTyping", { sender: username, receiver });
+      }
+    });
+
+    socket.on("receiveMessage", (data) => {
+      addMessageToChat(`${data.sender} to You: ${data.content}`);
+    });
+
+    socket.on("userTyping", (data) => {
+      typingIndicator.textContent = `${data.sender} is typing...`;
+    });
+
+    socket.on("userStoppedTyping", (data) => {
+      typingIndicator.textContent = "";
+    });
+
+    
+    function addMessageToChat(message) {
+      const messageElement = document.createElement("div");
+      messageElement.textContent = message;
+      chatBox.appendChild(messageElement);
+      chatBox.scrollTop = chatBox.scrollHeight; 
+    }
+  </script>
+</body>
+</html>
